@@ -133,7 +133,7 @@ tr:last-child td{border-bottom:none}
       <input type="password" id="setup-key" placeholder="sk-ant-..." />
       <div class="hint">Crie em <a href="https://console.anthropic.com" target="_blank" style="color:#1a1a1a">console.anthropic.com</a> → API Keys</div>
     </div>
-    <button class="btn-primary" onclick="doSetup()">Entrar no Coach</button>
+    <button class="btn-primary" id="btn-setup-main">Entrar no Coach</button>
   </div>
 </div>
 
@@ -387,10 +387,7 @@ function doLogout(){
   location.reload();
 }
 
-window.addEventListener('load',()=>{
-  const n=localStorage.getItem('cv_name'),k=localStorage.getItem('cv_key');
-  if(n&&k){document.getElementById('setup-name').value=n;document.getElementById('setup-key').value=k;doSetup();}
-});
+// auto-login handled in DOMContentLoaded
 
 async function loadStats(){
   const{data}=await sb.from('sessions').select('score_geral,stage').eq('user_id',userId);
@@ -1154,6 +1151,25 @@ async function loadAnalytics(){
   }).join('');
   document.getElementById('analytics-cards').innerHTML = cardsHtml;
 }
+
+// Attach all event listeners after DOM is ready
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('btn-setup-main').addEventListener('click', doSetup);
+  document.getElementById('btn-logout-nav').addEventListener('click', doLogout);
+  document.getElementById('btn-home-nav').addEventListener('click', showHome);
+  
+  // Enter key on setup form
+  document.getElementById('setup-name').addEventListener('keydown', function(e){ if(e.key==='Enter') doSetup(); });
+  document.getElementById('setup-key').addEventListener('keydown', function(e){ if(e.key==='Enter') doSetup(); });
+  
+  // Auto-login if saved
+  const n=localStorage.getItem('cv_name'),k=localStorage.getItem('cv_key');
+  if(n&&k){
+    document.getElementById('setup-name').value=n;
+    document.getElementById('setup-key').value=k;
+    doSetup();
+  }
+});
 </script>
 </body>
 </html>
