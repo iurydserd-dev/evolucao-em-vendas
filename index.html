@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sua Evolução em Vendas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh}
+.setup-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.setup-card{background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:36px;width:100%;max-width:400px}
+.setup-logo{font-size:20px;font-weight:600;margin-bottom:4px}
+.setup-sub{font-size:13px;color:#888;margin-bottom:28px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;color:#666;margin-bottom:5px;font-weight:500}
+.field input{width:100%;border:1px solid #e5e5e3;border-radius:8px;padding:10px 12px;font-size:14px;outline:none;font-family:inherit}
+.field input:focus{border-color:#888}
+.field .hint{font-size:11px;color:#aaa;margin-top:4px}
+.btn-primary{width:100%;padding:11px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-primary:hover{background:#333}
+.app{display:none;height:100vh;flex-direction:column}
+.navbar{height:48px;background:#fff;border-bottom:1px solid #e5e5e3;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.nav-logo{font-size:14px;font-weight:600}
+.nav-user{font-size:12px;font-weight:500;color:#555}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.btn-nav{font-size:12px;color:#888;background:none;border:1px solid #e5e5e3;cursor:pointer;padding:4px 10px;border-radius:6px;font-family:inherit}
+.btn-nav:hover{background:#f5f5f3}
+.app-body{flex:1;display:flex;overflow:hidden}
+.sidebar{width:200px;min-width:200px;background:#fff;border-right:1px solid #e5e5e3;display:flex;flex-direction:column;padding:12px;overflow-y:auto}
+.sec-label{font-size:10px;color:#aaa;font-weight:500;letter-spacing:.07em;text-transform:uppercase;padding:8px 6px 4px}
+.sb-btn{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;border:none;background:none;cursor:pointer;text-align:left;width:100%}
+.sb-btn:hover{background:#f5f5f3}
+.sb-btn.active{background:#f5f5f3;font-weight:500}
+.sb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sb-info{flex:1;min-width:0}
+.sb-name{font-size:12px;color:#1a1a1a}
+.sb-sub{font-size:10px;color:#aaa;margin-top:1px}
+.sb-score{font-size:10px;font-weight:600;color:#888;margin-left:auto}
+.sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid #e5e5e3}
+.sf-row{display:flex;justify-content:space-between;margin-bottom:4px}
+.sf-label{font-size:11px;color:#aaa}
+.sf-val{font-size:11px;font-weight:500;color:#666}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{padding:12px 18px 10px;border-bottom:1px solid #e5e5e3;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#fff;flex-shrink:0}
+.top-title{font-size:15px;font-weight:600}
+.top-desc{font-size:11px;color:#888;margin-top:2px}
+.fw-tags{display:flex;gap:5px;flex-wrap:wrap}
+.fw-tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+.prog-wrap{height:2px;background:#f5f5f3;flex-shrink:0}
+.prog-bar{height:2px;background:#1a1a1a;transition:width .4s}
+.score-strip{display:none;border-bottom:1px solid #e5e5e3;background:#fff;flex-shrink:0}
+.sc-card{flex:1;padding:8px 12px;text-align:center;border-right:1px solid #e5e5e3}
+.sc-card:last-child{border-right:none}
+.sc-label{font-size:10px;color:#aaa;margin-bottom:3px}
+.sc-val{font-size:15px;font-weight:600;color:#1a1a1a}
+.sc-bar{height:2px;border-radius:2px;margin-top:4px;background:#f0f0f0}
+.sc-fill{height:2px;border-radius:2px;transition:width .5s}
+.chat{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px;background:#f9f9f7}
+.msg{display:flex;gap:8px;align-items:flex-start}
+.msg.user{flex-direction:row-reverse}
+.av{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600}
+.av-c{background:#1a1a1a;color:#fff}
+.av-u{background:#e0e7ff;color:#3730a3}
+.bub{max-width:78%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.6}
+.bub.coach{background:#fff;border:1px solid #e5e5e3;border-top-left-radius:3px;color:#1a1a1a}
+.bub.user{background:#1a1a1a;color:#fff;border-top-right-radius:3px}
+.typing{display:flex;gap:4px;align-items:center;padding:10px 13px;background:#fff;border:1px solid #e5e5e3;border-radius:12px;border-top-left-radius:3px;width:fit-content}
+.dot{width:5px;height:5px;border-radius:50%;background:#ccc;animation:boun 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes boun{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.welcome-box{background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:16px;font-size:13px;color:#666;line-height:1.7}
+.welcome-box strong{color:#1a1a1a;font-weight:600}
+.input-bar{padding:12px 16px;border-top:1px solid #e5e5e3;display:flex;gap:8px;align-items:flex-end;background:#fff;flex-shrink:0}
+.input-wrap{flex:1}
+textarea{width:100%;border:1px solid #e5e5e3;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff;resize:none;outline:none;line-height:1.5;min-height:38px;max-height:90px}
+textarea:focus{border-color:#888}
+textarea::placeholder{color:#bbb}
+.hint-bar{font-size:10px;color:#bbb;margin-top:2px}
+.btn-start{padding:8px 16px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit}
+.btn-start:hover{background:#333}
+.btn-start:disabled{opacity:.4;cursor:not-allowed}
+.btn-duvida{padding:8px 16px;border-radius:8px;border:1px solid #e5e5e3;background:#fff;color:#555;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit}
+.btn-duvida:hover{background:#f5f5f3}
+.btn-duvida:disabled{opacity:.4;cursor:not-allowed}
+.btn-analytics{margin-top:10px;width:100%;padding:7px;border-radius:8px;border:1px solid #e5e5e3;background:#fff;font-size:11px;cursor:pointer;color:#1a1a1a;font-family:inherit}
+.btn-analytics:hover{background:#f5f5f3}
+.prosp-btns{display:none;gap:8px;padding:12px 18px;border-bottom:1px solid #e5e5e3;background:#fff;flex-shrink:0}
+.prosp-btn{flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;border:1px solid #e5e5e3;background:#f9f9f7;color:#1a1a1a;transition:all .15s}
+.prosp-btn:hover{background:#f0f0f0}
+.prosp-btn.selected{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.prosp-btn.outbound.selected{background:#1e40af;border-color:#1e40af}
+.prosp-btn.inbound.selected{background:#15803d;border-color:#15803d}
+.btn-mic{width:38px;height:38px;border-radius:50%;border:1px solid #e5e5e3;background:#fff;color:#555;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.btn-mic:hover{background:#f5f5f3}
+.btn-mic.recording{background:#fef2f2;border-color:#fca5a5;color:#dc2626;animation:pulse 1s infinite}
+.btn-mic:disabled{opacity:.4;cursor:not-allowed}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.dashboard{display:none;flex:1;overflow-y:auto;padding:24px;background:#f5f5f3;flex-direction:column;gap:20px}
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.dash-title{font-size:18px;font-weight:600}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.dash-card{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:14px}
+.dash-card-label{font-size:11px;color:#aaa;margin-bottom:4px}
+.dash-card-val{font-size:24px;font-weight:600}
+.team-table{background:#fff;border:1px solid #e5e5e3;border-radius:10px;overflow:hidden}
+.team-header{padding:14px 16px;border-bottom:1px solid #e5e5e3;font-size:13px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:11px;color:#aaa;font-weight:500;border-bottom:1px solid #f0f0f0;text-transform:uppercase;letter-spacing:.05em}
+td{padding:10px 16px;font-size:13px;border-bottom:1px solid #f9f9f7}
+tr:last-child td{border-bottom:none}
+.badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+.badge-green{background:#f0fdf4;color:#16a34a}
+.badge-yellow{background:#fefce8;color:#ca8a04}
+.badge-red{background:#fef2f2;color:#dc2626}
+.empty{padding:32px;text-align:center;color:#aaa;font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="setup-wrap" id="setup-wrap">
+  <div class="setup-card">
+    <div class="setup-logo">Sua Evolução em Vendas</div>
+    <div class="setup-sub">SPIN · Challenger · Trusted Advisor</div>
+    <div class="field">
+      <label>Seu nome</label>
+      <input type="text" id="setup-name" placeholder="Ex: Iury Serdeira" />
+    </div>
+    <div class="field">
+      <label>API key da Anthropic</label>
+      <input type="password" id="setup-key" placeholder="sk-ant-..." />
+      <div class="hint">Crie em <a href="https://console.anthropic.com" target="_blank" style="color:#1a1a1a">console.anthropic.com</a> → API Keys</div>
+    </div>
+    <button class="btn-primary" onclick="doSetup()">Entrar no Coach</button>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <div class="navbar">
+    <div class="nav-logo">Sua Evolução em Vendas</div>
+    <div class="nav-user" id="nav-user"></div>
+    <div class="nav-right">
+      <button class="btn-nav" id="btn-dash-nav" onclick="toggleDash()" style="display:none">Painel do time</button>
+      <button class="btn-nav" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="sidebar">
+      <div class="sec-label">Módulos</div>
+      <button class="sb-btn active" onclick="selStage(0)"><div class="sb-dot" style="background:#378ADD"></div><div class="sb-info"><div class="sb-name">Prospecção</div><div class="sb-sub">Venda Desafiadora</div></div><span class="sb-score" id="sc0"></span></button>
+      <button class="sb-btn" onclick="selStage(1)"><div class="sb-dot" style="background:#7F77DD"></div><div class="sb-info"><div class="sb-name">Qualificação</div><div class="sb-sub">SPIN Selling</div></div><span class="sb-score" id="sc1"></span></button>
+      <button class="sb-btn" onclick="selStage(2)"><div class="sb-dot" style="background:#D85A30"></div><div class="sb-info"><div class="sb-name">Proposta</div><div class="sb-sub">Venda Desafiadora</div></div><span class="sb-score" id="sc2"></span></button>
+      <button class="sb-btn" onclick="selStage(3)"><div class="sb-dot" style="background:#EAB308"></div><div class="sb-info"><div class="sb-name">Objeções</div><div class="sb-sub">Jeb Blount</div></div><span class="sb-score" id="sc3"></span></button>
+      <button class="sb-btn" onclick="selStage(4)"><div class="sb-dot" style="background:#639922"></div><div class="sb-info"><div class="sb-name">Fechamento</div><div class="sb-sub">SPIN + Challenger</div></div><span class="sb-score" id="sc4"></span></button>
+      <div style="height:1px;background:#e5e5e3;margin:8px 0"></div>
+      <button class="sb-btn" id="sb-trail" onclick="toggleTrail()"><div class="sb-dot" style="background:#f59e0b"></div><div class="sb-info"><div class="sb-name">Trilha</div><div class="sb-sub">Jornada gamificada</div></div></button>
+      <button class="sb-btn" id="sb-analytics" onclick="toggleAnalytics()"><div class="sb-dot" style="background:#888"></div><div class="sb-info"><div class="sb-name">Analytics</div><div class="sb-sub">Minha evolução</div></div></button>
+      <div class="sidebar-footer">
+        <div class="sf-row"><span class="sf-label">Sessões</span><span class="sf-val" id="total-sess">0</span></div>
+        <div class="sf-row"><span class="sf-label">Média geral</span><span class="sf-val" id="avg-score">—</span></div>
+      </div>
+    </div>
+    <div class="main" id="main-area">
+      <!-- HOME SCREEN -->
+      <div class="home-screen" id="home-screen">
+        <div class="home-greeting" id="home-greeting">Olá! 👋</div>
+        <div class="home-sub">Como você quer treinar hoje?</div>
+        <div class="home-cards">
+          <div class="home-card modulos" onclick="goModulos()">
+            <div class="home-card-icon modulos">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            <div class="home-card-title">Treinamento por módulos</div>
+            <div class="home-card-desc">Escolha qualquer módulo e treine livremente — Prospecção, Qualificação, Proposta, Objeções ou Fechamento.</div>
+            <span class="home-card-tag free">Modo livre</span>
+          </div>
+          <div class="home-card trail" onclick="goTrilha()">
+            <div class="home-card-icon trilha">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#854d0e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="home-card-title">Trilha de Evolução</div>
+            <div class="home-card-desc">Jornada gamificada — avance etapa por etapa. Precisa de 70% de média para desbloquear a próxima fase.</div>
+            <span class="home-card-tag gamified">Gamificado 🏆</span>
+          </div>
+        </div>
+        <div class="home-stats">
+          <div class="home-stat"><div class="home-stat-val" id="home-sess">0</div><div class="home-stat-label">Sessões</div></div>
+          <div class="home-stat"><div class="home-stat-val" id="home-avg">—</div><div class="home-stat-label">Média geral</div></div>
+        </div>
+      </div>
+      <!-- COACH AREA (hidden initially) -->
+      <div id="coach-area" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div class="topbar">
+        <div><div class="top-title" id="top-title">Prospecção</div><div class="top-desc" id="top-desc">Encontrando e abordando o cliente ideal</div></div>
+        <div class="fw-tags" id="fw-tags"></div>
+      </div>
+      <div class="trail-banner" id="trail-banner">
+        <div class="trail-banner-dot"></div>
+        <span id="trail-banner-text">Modo Trilha — as sessões contam para o seu avanço</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-bar" id="prog" style="width:0%"></div></div>
+      <div class="prosp-btns" id="prosp-btns">
+        <button class="prosp-btn outbound" id="btn-outbound" onclick="startProspeccao('outbound')">
+          Outbound — Venda Desafiadora
+        </button>
+        <button class="prosp-btn inbound" id="btn-inbound" onclick="startProspeccao('inbound')">
+          Inbound — SPIN Selling
+        </button>
+      </div>
+      <div class="score-strip" id="score-strip">
+        <div class="sc-card"><div class="sc-label">Ensinar</div><div class="sc-val" id="s-ensinar">—</div><div class="sc-bar"><div class="sc-fill" id="sf-ensinar" style="width:0%;background:#7F77DD"></div></div></div>
+        <div class="sc-card"><div class="sc-label">Adaptar</div><div class="sc-val" id="s-adaptar">—</div><div class="sc-bar"><div class="sc-fill" id="sf-adaptar" style="width:0%;background:#1D9E75"></div></div></div>
+        <div class="sc-card"><div class="sc-label">Tomar rédeas</div><div class="sc-val" id="s-redeas">—</div><div class="sc-bar"><div class="sc-fill" id="sf-redeas" style="width:0%;background:#D85A30"></div></div></div>
+        <div class="sc-card"><div class="sc-label">Confiança</div><div class="sc-val" id="s-confianca">—</div><div class="sc-bar"><div class="sc-fill" id="sf-confianca" style="width:0%;background:#378ADD"></div></div></div>
+      </div>
+      <div class="chat" id="chat"></div>
+      <div class="input-bar">
+        <button class="btn-mic" id="btn-mic" onclick="toggleMic()" title="Falar resposta">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <div class="input-wrap">
+          <textarea id="inp" placeholder="Responda ao cenário, escreva sua dúvida ou use o microfone..." rows="1" onkeydown="onKey(event)" oninput="autoH(this)"></textarea>
+          <div class="hint-bar" id="hint-bar">Shift+Enter para nova linha</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+          <button class="btn-start" id="btn-main" onclick="onMainBtn()">Iniciar treino</button>
+          <button class="btn-duvida" id="btn-duvida" onclick="sendDuvida()" style="display:none">Tirar dúvida</button>
+        </div>
+      </div>
+      </div><!-- end coach-area -->
+    </div>
+    <div class="dashboard" id="dashboard">
+      <div class="dash-header">
+        <div class="dash-title">Painel do time</div>
+        <button class="btn-nav" onclick="toggleDash()">Voltar ao treino</button>
+      </div>
+      <div class="dash-grid" id="dash-grid"></div>
+      <div class="team-table">
+        <div class="team-header">Desempenho por membro</div>
+        <table><thead><tr><th>Nome</th><th>Sessões</th><th>Média</th><th>Etapa trilha</th><th>Melhor módulo</th><th>Status</th></tr></thead>
+        <tbody id="team-tbody"><tr><td colspan="6" class="empty">Carregando...</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TRAIL PANEL -->
+<div class="trail-wrap" id="trail-panel">
+  <div>
+    <div class="trail-header" id="trail-header">Trilha de Vendas</div>
+    <div class="trail-sub" id="trail-sub">Complete cada etapa com média de 70% para desbloquear a próxima</div>
+  </div>
+  <div id="trail-steps"></div>
+</div>
+
+<!-- ANALYTICS PANEL -->
+<div id="analytics-panel" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:90%;max-width:820px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:18px;font-weight:600" id="analytics-title">Minha evolução</div>
+        <div style="font-size:12px;color:#888;margin-top:2px" id="analytics-sub"></div>
+      </div>
+      <button onclick="toggleAnalytics()" style="font-size:13px;padding:6px 14px;border-radius:8px;border:1px solid #e5e5e3;background:#fff;cursor:pointer;font-family:inherit">Fechar</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap" id="analytics-filters">
+      <button class="af-btn active" onclick="setRange('day')">Hoje</button>
+      <button class="af-btn" onclick="setRange('week')">Semana</button>
+      <button class="af-btn" onclick="setRange('month')">Mês</button>
+      <button class="af-btn" onclick="setRange('all')">Tudo</button>
+    </div>
+    <div style="margin-bottom:28px">
+      <canvas id="evolution-chart" height="280"></canvas>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px" id="analytics-cards"></div>
+  </div>
+</div>
+
+<style>
+.af-btn{padding:5px 14px;border-radius:20px;border:1px solid #e5e5e3;background:#fff;font-size:12px;cursor:pointer;font-family:inherit;color:#555}
+.af-btn:hover{background:#f5f5f3}
+.af-btn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+
+/* TRAIL */
+.trail-wrap{flex:1;overflow-y:auto;padding:24px;background:#f5f5f3;display:none;flex-direction:column;gap:16px}
+.trail-header{font-size:18px;font-weight:600;margin-bottom:4px}
+.trail-sub{font-size:13px;color:#888;margin-bottom:8px}
+.trail-step{background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .15s}
+.trail-step:hover:not(.locked){background:#f9f9f7;border-color:#ccc}
+.trail-step.locked{opacity:.6;cursor:not-allowed}
+.trail-step.completed{border-color:#16a34a;background:#f0fdf4}
+.trail-step.active-step{border-color:#1e40af;background:#eff6ff}
+.trail-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.trail-icon.locked{background:#f0f0f0}
+.trail-icon.completed{background:#dcfce7}
+.trail-icon.active-step{background:#dbeafe}
+.trail-icon.locked svg,.trail-icon.completed svg,.trail-icon.active-step svg{width:20px;height:20px}
+.trail-info{flex:1}
+.trail-name{font-size:15px;font-weight:600;color:#1a1a1a}
+.trail-desc{font-size:12px;color:#888;margin-top:2px}
+.trail-score-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.trail-bar-wrap{flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden}
+.trail-bar-fill{height:6px;border-radius:3px;transition:width .5s}
+.trail-score-label{font-size:12px;font-weight:500;min-width:36px;text-align:right}
+.trail-badge{font-size:10px;padding:3px 10px;border-radius:10px;font-weight:600;flex-shrink:0}
+.trail-badge.done{background:#dcfce7;color:#15803d}
+.trail-badge.next{background:#dbeafe;color:#1e40af}
+.trail-badge.locked-badge{background:#f0f0f0;color:#888}
+.trail-badge.inprogress{background:#fef9c3;color:#854d0e}
+.trail-criteria{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.trail-criterion{display:flex;align-items:center;gap:8px;font-size:12px}
+.trail-criterion-dot{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;font-weight:700}
+.trail-criterion-dot.done{background:#dcfce7;color:#15803d}
+.trail-criterion-dot.pending{background:#f0f0f0;color:#aaa}
+.btn-register-sale{margin-top:10px;padding:7px 14px;border-radius:8px;border:1px solid #16a34a;background:#f0fdf4;color:#15803d;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;width:100%}
+.btn-register-sale:hover{background:#dcfce7}
+.btn-register-sale:disabled{opacity:.5;cursor:not-allowed}
+.trail-connector{width:2px;height:16px;background:#e5e5e3;margin:0 auto;margin-left:38px}
+.trail-banner{display:none;padding:8px 18px;background:#fef9c3;border-bottom:1px solid #fde68a;font-size:12px;font-weight:500;color:#854d0e;flex-shrink:0;align-items:center;gap:8px}
+.trail-banner-dot{width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse2 1.5s infinite}
+@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* HOME SCREEN */
+.home-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;background:#f5f5f3;gap:12px}
+.home-greeting{font-size:22px;font-weight:600;color:#1a1a1a;text-align:center}
+.home-sub{font-size:14px;color:#888;text-align:center;margin-bottom:12px}
+.home-cards{display:flex;gap:16px;width:100%;max-width:560px;flex-wrap:wrap}
+.home-card{flex:1;min-width:220px;background:#fff;border:1.5px solid #e5e5e3;border-radius:14px;padding:24px;cursor:pointer;transition:all .15s;text-align:left}
+.home-card:hover{border-color:#1a1a1a;transform:translateY(-2px)}
+.home-card.trail{border-color:#f59e0b}
+.home-card.trail:hover{border-color:#d97706;background:#fffbeb}
+.home-card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.home-card-icon.modulos{background:#f0f0f0}
+.home-card-icon.trilha{background:#fef9c3}
+.home-card-title{font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:6px}
+.home-card-desc{font-size:12px;color:#888;line-height:1.5}
+.home-card-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500;margin-top:10px}
+.home-card-tag.free{background:#f0f0f0;color:#555}
+.home-card-tag.gamified{background:#fef9c3;color:#854d0e}
+.home-stats{display:flex;gap:24px;margin-top:8px}
+.home-stat{text-align:center}
+.home-stat-val{font-size:20px;font-weight:600;color:#1a1a1a}
+.home-stat-label{font-size:11px;color:#aaa;margin-top:2px}
+</style>
+
+<script>
+const SURL='https://astjtvmedlajkwtqyffj.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzdGp0dm1lZGxhamt3dHF5ZmZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODI3NTMsImV4cCI6MjA5MTE1ODc1M30.OoYq7_96tP6ODDMHYOQ_4apiaPon3GO1ix1sBrkTrMc';
+const sb=supabase.createClient(SURL,SKEY);
+const ADMIN_NAMES=['iury serdeira','admin'];
+const STAGES=[
+  {name:"Prospecção",desc:"Outbound ou Inbound — escolha abaixo",fw:[{l:"Venda Desafiadora",bg:"#dbeafe",c:"#1e40af"},{l:"SPIN Selling",bg:"#ede9fe",c:"#5b21b6"}],prompt:"prospecção ativa B2B em consultoria/agência usando a Venda Desafiadora (Challenger Sale). O vendedor vai até o cliente com uma Hipótese de Problema — uma provocação calibrada ao setor do prospect que desafia o status quo, ensina algo que ele não sabe e cria urgência. Foco em: construir a hipótese de problema, personalizar o insight para o ICP, abrir conversa com provocação inteligente via LinkedIn, e-mail frio ou ligação, sem pedir reunião diretamente mas gerando curiosidade e tensão produtiva."},
+  {name:"Qualificação",desc:"Cliente levantou a mão — SPIN Selling",fw:[{l:"SPIN Selling",bg:"#ede9fe",c:"#5b21b6"}],prompt:"qualificação de leads inbound em consultoria B2B usando exclusivamente o SPIN Selling (Neil Rackham). O cliente já demonstrou interesse — agora o vendedor precisa descobrir a necessidade real através de perguntas estruturadas: Situação (contexto atual), Problema (dores explícitas e implícitas), Implicação (consequências do problema não resolvido) e Need-Payoff (valor percebido da solução). O objetivo é transformar problemas implícitos em necessidades explícitas antes de falar qualquer coisa sobre a solução."},
+  {name:"Proposta",desc:"Apresentando com insight — Venda Desafiadora",fw:[{l:"Venda Desafiadora",bg:"#dbeafe",c:"#1e40af"}],prompt:"construção e apresentação de proposta comercial em consultoria B2B usando a Venda Desafiadora (Challenger Sale). O vendedor não apresenta features — ele ensina, provoca e personaliza. Foco em: reframe da visão do cliente sobre o problema, apresentar um insight que redefine como o cliente enxerga a situação, construir tensão construtiva entre o status quo e a solução, adaptar a narrativa ao perfil do decisor, e tomar as rédeas da conversa sem ceder na primeira objeção de preço ou timing."},
+  {name:"Objeções",desc:"Quebrando resistências — Jeb Blount",fw:[{l:"Objeções — Jeb Blount",bg:"#fef9c3",c:"#854d0e"}],prompt:"tratamento de objeções em consultoria B2B usando o framework do livro Objeções de Jeb Blount. Jeb classifica objeções em 4 tipos: (1) Objeções Reflexas — reações automáticas antes de ouvir a proposta ('não tenho interesse', 'já temos fornecedor'), que devem ser contornadas com calma e persistência; (2) Objeções Reais — preocupações legítimas sobre preço, timing, ROI, risco, que precisam ser tratadas com empatia, dados e reframing; (3) Objeções de Adiamento — 'preciso pensar', 'vou falar com meu sócio', que escondem medo de decidir; (4) Objeções Ocultas — o cliente não fala o que realmente o impede. O coach deve treinar o vendedor a identificar o tipo de objeção, não entrar em modo defensivo, usar a técnica LSCPA (Listen, Share, Clarify, Present, Ask) e avançar o processo mesmo diante da resistência."},
+  {name:"Fechamento",desc:"Comprometimento progressivo e decisão",fw:[{l:"SPIN Selling",bg:"#ede9fe",c:"#5b21b6"},{l:"Venda Desafiadora",bg:"#dbeafe",c:"#1e40af"}],prompt:"fechamento e geração de comprometimento progressivo em consultoria B2B combinando SPIN Selling e Venda Desafiadora. No SPIN, o fechamento é consequência natural das perguntas Need-Payoff — o cliente já expressou o valor que quer, o vendedor apenas confirma. No Challenger, o fechamento envolve manter a tensão construtiva, não ceder em preço sem contrapartida, e conduzir o cliente à decisão com confiança. Foco em: micro-comprometimentos ao longo do processo, identificar o momento certo para pedir a decisão, tratar a indecisão como objeção oculta, e fechar sem parecer desesperado."}
+];
+let apiKey='',userName='',userId='',curStage=0,started=false,loading=false,hist=[],totalSess=0;
+let scores={ensinar:[],adaptar:[],redeas:[],confianca:[]};
+let stageScores={};
+
+function getUID(name){
+  const k='cv_uid_'+name.toLowerCase().replace(/\s+/g,'_');
+  let id=localStorage.getItem(k);
+  if(!id){id='u'+Date.now()+Math.random().toString(36).slice(2,6);localStorage.setItem(k,id);}
+  return id;
+}
+
+function doSetup(){
+  const name=document.getElementById('setup-name').value.trim();
+  const key=document.getElementById('setup-key').value.trim();
+  if(!name){alert('Digite seu nome.');return;}
+  if(!key.startsWith('sk-')){alert('API key inválida.');return;}
+  userName=name;apiKey=key;userId=getUID(name);
+  localStorage.setItem('cv_name',name);localStorage.setItem('cv_key',key);
+  document.getElementById('setup-wrap').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('nav-user').textContent=name;
+  if(ADMIN_NAMES.includes(name.toLowerCase()))document.getElementById('btn-dash-nav').style.display='block';
+  selStage(0);loadStats();showWelcome();
+}
+
+function doLogout(){
+  localStorage.removeItem('cv_name');localStorage.removeItem('cv_key');
+  location.reload();
+}
+
+window.addEventListener('load',()=>{
+  const n=localStorage.getItem('cv_name'),k=localStorage.getItem('cv_key');
+  if(n&&k){document.getElementById('setup-name').value=n;document.getElementById('setup-key').value=k;doSetup();}
+});
+
+async function loadStats(){
+  const{data}=await sb.from('sessions').select('score_geral,stage').eq('user_id',userId);
+  if(!data||!data.length)return;
+  totalSess=data.length;
+  document.getElementById('total-sess').textContent=totalSess;
+  const avg=Math.round(data.reduce((a,b)=>a+(b.score_geral||0),0)/data.length);
+  document.getElementById('avg-score').textContent=avg+'%';
+  document.getElementById('home-sess').textContent=totalSess;
+  document.getElementById('home-avg').textContent=avg+'%';
+  const byStage={};
+  data.forEach(s=>{if(!byStage[s.stage])byStage[s.stage]=[];byStage[s.stage].push(s.score_geral||0);});
+  STAGES.forEach((st,i)=>{
+    if(byStage[st.name]){
+      const a=Math.round(byStage[st.name].reduce((a,b)=>a+b,0)/byStage[st.name].length);
+      document.getElementById('sc'+i).textContent=a+'%';
+    }
+  });
+}
+
+function showWelcome(){
+  const c=document.getElementById('chat');c.innerHTML='';
+  const b=document.createElement('div');b.className='welcome-box';
+  b.innerHTML=`<strong>Olá, ${userName}!</strong> Escolha um módulo na lateral e clique em <strong>Iniciar treino</strong>. Responda os cenários como faria na vida real — você recebe feedback com score por competência e seu progresso é salvo automaticamente.`;
+  c.appendChild(b);
+}
+
+function showHome(){
+  document.getElementById('home-screen').style.display='flex';
+  document.getElementById('coach-area').style.display='none';
+  document.getElementById('home-greeting').textContent='Olá, '+userName+'! 👋';
+  // Update stats
+  document.getElementById('home-sess').textContent=totalSess||0;
+  const avg=document.getElementById('avg-score').textContent;
+  document.getElementById('home-avg').textContent=avg==='—'?'—':avg;
+}
+
+function goModulos(){
+  document.getElementById('home-screen').style.display='none';
+  document.getElementById('coach-area').style.display='flex';
+  window._trailMode=false;
+  selStage(0);
+}
+
+function goTrilha(){
+  document.getElementById('home-screen').style.display='none';
+  document.getElementById('coach-area').style.display='flex';
+  toggleTrail();
+}
+
+function selStage(i){
+  curStage=i;
+  document.querySelectorAll('.sb-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+  const s=STAGES[i];
+  document.getElementById('top-title').textContent=s.name;
+  document.getElementById('top-desc').textContent=s.desc;
+  document.getElementById('fw-tags').innerHTML=s.fw.map(f=>`<span class="fw-tag" style="background:${f.bg};color:${f.c}">${f.l}</span>`).join('');
+  const prospBtns=document.getElementById('prosp-btns');
+  prospBtns.style.display=i===0?'flex':'none';
+  if(i===0){
+    document.getElementById('btn-main').textContent='Escolha Outbound ou Inbound';
+    document.getElementById('btn-main').disabled=true;
+    document.getElementById('btn-outbound').classList.remove('selected');
+    document.getElementById('btn-inbound').classList.remove('selected');
+  } else {
+    document.getElementById('btn-main').disabled=false;
+  }
+  if(started)reset();
+}
+function reset(){
+  started=false;hist=[];
+  document.getElementById('chat').innerHTML='';
+  document.getElementById('prog').style.width='0%';
+  document.getElementById('score-strip').style.display='none';
+  document.getElementById('btn-duvida').style.display='none';
+  if(curStage===0){
+    document.getElementById('btn-main').textContent='Escolha Outbound ou Inbound';
+    document.getElementById('btn-main').disabled=true;
+    document.getElementById('btn-outbound').classList.remove('selected');
+    document.getElementById('btn-inbound').classList.remove('selected');
+  } else {
+    document.getElementById('btn-main').textContent='Iniciar treino';
+    document.getElementById('btn-main').disabled=false;
+  }
+  window._trailMode = false;
+  const banner = document.getElementById('trail-banner');
+  if(banner) banner.style.display = 'none';
+  showWelcome();
+}
+function autoH(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,90)+'px';}
+function onKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    const inp=document.getElementById('inp');
+    const txt=inp.value.trim();
+    if(!txt||loading)return;
+    inp.value='';
+    inp.style.height='auto';
+    if(started){sendText(txt);}
+    else{startSession();}
+  }
+}
+function sendDuvida(){
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim();
+  if(!txt||loading)return;
+  inp.value='';inp.style.height='auto';
+  addMsg('user','[Dúvida] '+txt);
+  const msg='[DÚVIDA DO USUÁRIO — não é uma resposta ao cenário, é uma pergunta de aprendizado. Responda de forma didática e clara, explicando o conceito solicitado com exemplos práticos. Após responder, retome o cenário que estava em andamento ou pergunte se quer continuar]: '+txt;
+  hist.push({role:'user',content:msg});
+  const cp=parseInt(document.getElementById('prog').style.width||'20')+5;
+  updProg(Math.min(85,cp));
+  setLoad(true);addTyping();
+  callAPI(hist).then(r=>{
+    hist.push({role:'assistant',content:r});
+    remTyping();addMsg('coach',cleanText(r));
+    setLoad(false);
+    document.getElementById('chat').scrollTop=9999;
+  }).catch(e=>{remTyping();addMsg('coach','Erro: '+e.message);setLoad(false);});
+}
+function onMainBtn(){if(!started)startSession();else reset();}
+function setLoad(on){loading=on;document.getElementById('inp').disabled=on;document.getElementById('btn-main').disabled=on;const bd=document.getElementById('btn-duvida');if(bd)bd.disabled=on;const bm=document.getElementById('btn-mic');if(bm)bm.disabled=on;if(on&&isRecording)stopMic();}
+function updProg(p){document.getElementById('prog').style.width=p+'%';}
+function addMsg(role,text){
+  const c=document.getElementById('chat');
+  const d=document.createElement('div');d.className='msg '+(role==='user'?'user':'');
+  const av=document.createElement('div');av.className='av '+(role==='user'?'av-u':'av-c');av.textContent=role==='user'?'EU':'C';
+  const b=document.createElement('div');b.className='bub '+role;b.innerHTML=text.replace(/\n/g,'<br>');
+  d.appendChild(av);d.appendChild(b);c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function addTyping(){
+  const c=document.getElementById('chat');
+  const d=document.createElement('div');d.className='msg';d.id='typ';
+  const av=document.createElement('div');av.className='av av-c';av.textContent='C';
+  const t=document.createElement('div');t.className='typing';t.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  d.appendChild(av);d.appendChild(t);c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function remTyping(){const t=document.getElementById('typ');if(t)t.remove();}
+function parseScore(text){const m=text.match(/SCORE:\{([^}]+)\}/);if(!m)return null;try{return JSON.parse('{'+m[1]+'}');}catch{return null;}}
+function cleanText(t){return t.replace(/SCORE:\{[^}]+\}/,'').trim();}
+function updateStrip(sc){
+  document.getElementById('score-strip').style.display='flex';
+  ['ensinar','adaptar','redeas','confianca'].forEach(k=>{
+    scores[k].push(sc[k]);
+    const avg=Math.round(scores[k].reduce((a,b)=>a+b,0)/scores[k].length);
+    document.getElementById('s-'+k).textContent=avg+'%';
+    document.getElementById('sf-'+k).style.width=avg+'%';
+  });
+  const g=Math.round((sc.ensinar+sc.adaptar+sc.redeas+sc.confianca)/4);
+  document.getElementById('sc'+curStage).textContent=g+'%';
+  stageScores[curStage]=(stageScores[curStage]||[]);
+  stageScores[curStage].push(g);
+  const all=Object.values(stageScores).flat();
+  document.getElementById('avg-score').textContent=Math.round(all.reduce((a,b)=>a+b,0)/all.length)+'%';
+}
+async function saveSession(sc){
+  if(!sc)return;
+  const g=Math.round((sc.ensinar+sc.adaptar+sc.redeas+sc.confianca)/4);
+  totalSess++;document.getElementById('total-sess').textContent=totalSess;
+  const today = new Date().toISOString().split('T')[0];
+  const mode = window._trailMode ? 'trilha' : 'livre';
+  await sb.from('sessions').insert({user_id:userId,user_name:userName,stage:STAGES[curStage].name,score_ensinar:sc.ensinar,score_adaptar:sc.adaptar,score_redeas:sc.redeas,score_confianca:sc.confianca,score_geral:g,session_date:today,mode:mode});
+  
+  // Trail feedback toast
+  if(window._trailMode){
+    const stageName = STAGES[curStage].name;
+    const {data} = await sb.from('sessions').select('score_geral').eq('user_id',userId).eq('stage',stageName).eq('mode','trilha');
+    const sessions = data || [];
+    const avg = sessions.length ? Math.round(sessions.reduce((a,b)=>a+(b.score_geral||0),0)/sessions.length) : g;
+    const count = sessions.length;
+    let msg = '';
+    if(avg >= 70 && count >= 2){
+      msg = `📊 Trilha: média ${avg}% atingida! Agora registre uma venda real nesta etapa na tela da Trilha para desbloquear a próxima fase. 🏆`;
+    } else if(count < 2){
+      msg = `📊 Trilha: ${g}% nesta sessão. Faça mais ${Math.max(0, 2-count)} sessão(ões) e atinja 70% de média para avançar.`;
+    } else {
+      msg = `📊 Trilha: média atual ${avg}% com ${count} sessões. Precisa de 70% + registrar uma venda real para avançar!`;
+    }
+    // Show as a system message in chat
+    const chat = document.getElementById('chat');
+    const d = document.createElement('div');
+    d.style.cssText = 'background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12px;color:#854d0e;font-weight:500;margin-top:4px';
+    d.textContent = msg;
+    chat.appendChild(d);
+
+    chat.scrollTop = chat.scrollHeight;
+  }
+}
+const SYS=s=>`Você é um coach de vendas expert em SPIN Selling, Venda Desafiadora (Challenger Sale) e Objeções (Jeb Blount). Treina consultoria/agência B2B em português brasileiro.
+Módulo: ${s.name} — ${s.prompt}.
+AO LANÇAR CENÁRIO: Situação realista B2B, termine com "O que você faz?" ou "Como você responde?".
+AO AVALIAR: 1.Pontos fortes 2.Melhorias 3.O que o framework diz 4.Versão melhorada 5.Última linha EXATAMENTE: SCORE:{"ensinar":X,"adaptar":X,"redeas":X,"confianca":X} (0-100)
+Após feedback, pergunte se continua ou quer novo cenário. Português brasileiro, direto e exigente.`;
+
+const SYS_TRAIL=s=>`Você é um CLIENTE real de consultoria/agência B2B. Você vai simular uma conversa de vendas real com o vendedor.
+
+Módulo: ${s.name} — ${s.prompt}.
+
+REGRAS DO ROLEPLAY:
+- Você É o cliente — fale sempre como cliente, nunca como coach
+- Comece apresentando seu personagem: nome fictício, empresa, setor, desafio atual
+- Reaja naturalmente às abordagens do vendedor — seja resistente no início, cético, ocupado
+- Se o vendedor aplicar bem as técnicas (fizer perguntas certas, trouxer insight, desafiar seu status quo, tratar objeções com dados), vá cedendo progressivamente
+- Se o vendedor errar (pitch genérico, pressão, não ouvir), mostre resistência, diga que está ocupado, que já tem fornecedor
+- Quando o vendedor performar muito bem ao longo da conversa — aplicando corretamente o framework do módulo — feche o negócio dizendo EXATAMENTE esta frase no final da sua resposta: "NEGÓCIO_FECHADO"
+- Depois da frase NEGÓCIO_FECHADO, adicione uma linha de feedback: SCORE:{"ensinar":X,"adaptar":X,"redeas":X,"confianca":X} (0-100)
+- O fechamento só acontece se o vendedor realmente merecer — não facilite, seja um cliente real
+- Fale sempre em português brasileiro, tom natural de empresário`;
+async function callAPI(msgs){
+  const sysPrompt = window._trailMode ? SYS_TRAIL(STAGES[curStage]) : SYS(STAGES[curStage]);
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:sysPrompt,messages:msgs})});
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||r.status);}
+  const d=await r.json();return d.content?.[0]?.text||'';
+}
+function startProspeccao(tipo){
+  document.getElementById('btn-outbound').classList.toggle('selected', tipo==='outbound');
+  document.getElementById('btn-inbound').classList.toggle('selected', tipo==='inbound');
+  document.getElementById('btn-main').disabled=false;
+  
+  const prompts={
+    outbound:`Prospecção OUTBOUND em consultoria/agência B2B usando a Venda Desafiadora. 
+O vendedor vai até o cliente com uma Hipótese de Problema — uma provocação calibrada ao setor do prospect que desafia o status quo, ensina algo que ele não sabe e cria urgência sem pedir reunião diretamente.
+Lance um cenário de prospecção outbound: dê um nome fictício para o prospect, setor, porte da empresa, e mostre o primeiro contato (LinkedIn, e-mail frio ou ligação) usando a lógica do Challenger — insight + provocação + gancho de curiosidade.`,
+    inbound:`Prospecção INBOUND em consultoria/agência B2B usando o SPIN Selling.
+O cliente já demonstrou interesse (preencheu formulário, pediu contato, veio por indicação). O vendedor agora precisa conduzir a primeira conversa descobrindo a necessidade real através de perguntas SPIN: Situação, Problema, Implicação, Need-Payoff.
+Lance um cenário de primeiro contato inbound: dê nome fictício ao lead, contexto de como ele chegou, e mostre como o vendedor deve abrir essa conversa com perguntas de Situação antes de falar qualquer coisa sobre a solução.`
+  };
+  
+  window._prospPrompt = prompts[tipo];
+  window._prospTipo = tipo;
+  startSession();
+}
+
+async function startSession(){
+  started=true;hist=[];document.getElementById('chat').innerHTML='';document.getElementById('btn-main').textContent='Novo cenário';
+  document.getElementById('btn-duvida').style.display='block';
+  updProg(8);setLoad(true);addTyping();
+  let initPrompt;
+  if(window._trailMode){
+    initPrompt = `Inicie a simulação de ${STAGES[curStage].name}. Apresente seu personagem (cliente) e comece a interação. Seja um cliente realista e resistente — só feche o negócio se o vendedor realmente merecer.`;
+  } else if(curStage===0 && window._prospPrompt){
+    initPrompt = `Inicie o treino de Prospecção. Lance um cenário realista de consultoria/agência B2B. ${window._prospPrompt}`;
+  } else {
+    initPrompt = `Inicie o treino de ${STAGES[curStage].name}. Lance um cenário realista e desafiador de consultoria/agência B2B.`;
+  }
+  hist.push({role:'user',content:initPrompt});
+  try{const r=await callAPI(hist);hist.push({role:'assistant',content:r});remTyping();addMsg('coach',cleanText(r));updProg(20);}
+  catch(e){remTyping();addMsg('coach','Erro: '+e.message);}
+  setLoad(false);
+}
+async function sendText(txt){
+  if(!txt||loading)return;
+  addMsg('user',txt);hist.push({role:'user',content:txt});
+  updProg(Math.min(85,parseInt(document.getElementById('prog').style.width||'20')+15));
+  setLoad(true);addTyping();
+  try{
+    const r=await callAPI(hist);hist.push({role:'assistant',content:r});
+    remTyping();const sc=parseScore(r);
+    if(sc){updateStrip(sc);await saveSession(sc);}
+    addMsg('coach',cleanText(r));
+  }catch(e){remTyping();addMsg('coach','Erro: '+e.message);}
+  setLoad(false);document.getElementById('chat').scrollTop=9999;
+}
+let showDash=false;
+function toggleDash(){
+  showDash=!showDash;
+  document.getElementById('main-area').style.display=showDash?'none':'flex';
+  document.getElementById('dashboard').style.display=showDash?'flex':'none';
+  document.getElementById('btn-dash-nav').textContent=showDash?'Voltar ao treino':'Painel do time';
+  if(showDash)loadDash();
+}
+const TRAIL_STAGES_DASH = ['Prospecção','Qualificação','Proposta','Objeções','Fechamento'];
+async function loadDash(){
+  const{data}=await sb.from('sessions').select('*').order('created_at',{ascending:false});
+  if(!data||!data.length){document.getElementById('team-tbody').innerHTML='<tr><td colspan="6" class="empty">Nenhuma sessão ainda.</td></tr>';return;}
+  const tS=data.length,avgG=Math.round(data.reduce((a,b)=>a+(b.score_geral||0),0)/tS);
+  const members=new Set(data.map(s=>s.user_name)).size,mods=new Set(data.map(s=>s.stage)).size;
+  document.getElementById('dash-grid').innerHTML=`<div class="dash-card"><div class="dash-card-label">Membros</div><div class="dash-card-val">${members}</div></div><div class="dash-card"><div class="dash-card-label">Total sessões</div><div class="dash-card-val">${tS}</div></div><div class="dash-card"><div class="dash-card-label">Média do time</div><div class="dash-card-val">${avgG}%</div></div><div class="dash-card"><div class="dash-card-label">Módulos</div><div class="dash-card-val">${mods}</div></div>`;
+  const byU={};
+  data.forEach(s=>{if(!byU[s.user_name])byU[s.user_name]={s:[],st:{}};byU[s.user_name].s.push(s);if(!byU[s.user_name].st[s.stage])byU[s.user_name].st[s.stage]=[];byU[s.user_name].st[s.stage].push(s.score_geral||0);});
+  const tb=document.getElementById('team-tbody');tb.innerHTML='';
+  Object.entries(byU).forEach(([name,info])=>{
+    const c=info.s.length,avg=Math.round(info.s.reduce((a,b)=>a+(b.score_geral||0),0)/c);
+    let best='—',bestA=0;
+    Object.entries(info.st).forEach(([st,vals])=>{const a=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);if(a>bestA){bestA=a;best=st;}});
+    const last=new Date(info.s[0].created_at).toLocaleDateString('pt-BR');
+    const badge=avg>=70?'badge-green':avg>=40?'badge-yellow':'badge-red';
+    const status=avg>=70?'Avançando':avg>=40?'Em progresso':'Precisa atenção';
+    // Compute trail stage
+    const trailSess = info.s.filter(s=>s.mode==='trilha');
+    const trailByStage = {};
+    TRAIL_STAGES_DASH.forEach(s=>{trailByStage[s]=[];});
+    trailSess.forEach(s=>{if(trailByStage[s.stage])trailByStage[s.stage].push(s.score_geral||0);});
+    let trailStage='Não iniciou';
+    for(let i=0;i<TRAIL_STAGES_DASH.length;i++){
+      const st=TRAIL_STAGES_DASH[i];
+      const vals=trailByStage[st];
+      const avg2=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+      if(avg2>=70&&vals.length>=2){trailStage=i<TRAIL_STAGES_DASH.length-1?'Em '+TRAIL_STAGES_DASH[i+1]:'Concluída ✓';}
+      else if(vals.length>0){trailStage='Em '+st+' ('+avg2+'%)';break;}
+      else{trailStage=i===0?'Não iniciou':'Em '+st;break;}
+    }
+    tb.innerHTML+=`<tr><td style="font-weight:500">${name}</td><td>${c}</td><td>${avg}%</td><td style="font-size:12px">${trailStage}</td><td>${best}</td><td><span class="badge ${badge}">${status}</span></td></tr>`;
+  });
+}
+
+// MICROFONE
+let recognition = null;
+let isRecording = false;
+
+function toggleMic() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('Seu navegador não suporta reconhecimento de voz. Use o Chrome.');
+    return;
+  }
+  if (isRecording) {
+    stopMic();
+  } else {
+    startMic();
+  }
+}
+
+function startMic() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.lang = 'pt-BR';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  const inp = document.getElementById('inp');
+  const hint = document.getElementById('hint-bar');
+  const btn = document.getElementById('btn-mic');
+  let finalTranscript = inp.value;
+
+  recognition.onstart = () => {
+    isRecording = true;
+    btn.classList.add('recording');
+    hint.textContent = 'Ouvindo... clique no microfone para parar';
+    hint.style.color = '#dc2626';
+  };
+
+  recognition.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        finalTranscript += e.results[i][0].transcript + ' ';
+      } else {
+        interim += e.results[i][0].transcript;
+      }
+    }
+    inp.value = finalTranscript + interim;
+    autoH(inp);
+  };
+
+  recognition.onerror = (e) => {
+    stopMic();
+    if (e.error !== 'no-speech') alert('Erro no microfone: ' + e.error);
+  };
+
+  recognition.onend = () => {
+    stopMic();
+  };
+
+  recognition.start();
+}
+
+function stopMic() {
+  if (recognition) recognition.stop();
+  isRecording = false;
+  const btn = document.getElementById('btn-mic');
+  const hint = document.getElementById('hint-bar');
+  btn.classList.remove('recording');
+  hint.textContent = 'Shift+Enter para nova linha';
+  hint.style.color = '';
+}
+
+// TRAIL
+let trailOpen = false;
+const TRAIL_STAGES = ['Prospecção','Qualificação','Proposta','Objeções','Fechamento'];
+const TRAIL_COLORS = ['#378ADD','#7F77DD','#D85A30','#EAB308','#639922'];
+const TRAIL_MIN_SCORE = 70;
+const TRAIL_MIN_SESSIONS = 2;
+
+function toggleTrail(){
+  trailOpen = !trailOpen;
+  const panel = document.getElementById('trail-panel');
+  const mainArea = document.getElementById('main-area');
+  
+  // Close analytics if open
+  if(trailOpen && analyticsOpen){
+    analyticsOpen = false;
+    document.getElementById('analytics-panel').style.display='none';
+    document.getElementById('sb-analytics').classList.remove('active');
+  }
+
+  panel.style.display = trailOpen ? 'flex' : 'none';
+  mainArea.style.display = trailOpen ? 'none' : 'flex';
+  document.getElementById('sb-trail').classList.toggle('active', trailOpen);
+  if(trailOpen) loadTrail();
+}
+
+async function loadTrail(){
+  document.getElementById('trail-header').textContent = 'Trilha de ' + userName;
+  
+  // Load trail sessions and sales
+  const [{data}, {data: salesData}] = await Promise.all([
+    sb.from('sessions').select('stage,score_geral,created_at').eq('user_id', userId).eq('mode','trilha').order('created_at',{ascending:true}),
+    sb.from('sales').select('stage').eq('user_id', userId)
+  ]);
+
+  // Compute avg per stage
+  const stageData = {};
+  TRAIL_STAGES.forEach(s => { stageData[s] = {sessions:[], avg:0, unlocked:false, completed:false, hasSale:false}; });
+  
+  // Mark sales
+  if(salesData && salesData.length){
+    salesData.forEach(s => { if(stageData[s.stage]) stageData[s.stage].hasSale = true; });
+  }
+
+  if(data && data.length){
+    data.forEach(s => {
+      if(stageData[s.stage]) stageData[s.stage].sessions.push(s.score_geral||0);
+    });
+    TRAIL_STAGES.forEach(s => {
+      const sess = stageData[s].sessions;
+      if(sess.length) stageData[s].avg = Math.round(sess.reduce((a,b)=>a+b,0)/sess.length);
+      // Completed = score >= 70% AND has sale registered
+      stageData[s].completed = stageData[s].avg >= TRAIL_MIN_SCORE && sess.length >= TRAIL_MIN_SESSIONS && stageData[s].hasSale;
+    });
+  }
+
+  // Determine unlocked stages
+  stageData['Prospecção'].unlocked = true;
+  for(let i=1; i<TRAIL_STAGES.length; i++){
+    stageData[TRAIL_STAGES[i]].unlocked = stageData[TRAIL_STAGES[i-1]].completed;
+  }
+
+  // Find current active stage
+  let activeStage = TRAIL_STAGES[0];
+  for(let i=0; i<TRAIL_STAGES.length; i++){
+    if(!stageData[TRAIL_STAGES[i]].completed){
+      activeStage = TRAIL_STAGES[i];
+      break;
+    }
+  }
+
+  // Render
+  const container = document.getElementById('trail-steps');
+  container.innerHTML = '';
+
+  TRAIL_STAGES.forEach((stage, i) => {
+    const info = stageData[stage];
+    const isActive = stage === activeStage && info.unlocked;
+    const pct = Math.min(100, Math.round((info.avg / TRAIL_MIN_SCORE) * 100));
+    const sessCount = info.sessions.length;
+
+    let iconSvg, stepClass, iconClass, badgeClass, badgeText, barColor;
+
+    if(info.completed){
+      iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+      stepClass = 'trail-step completed';
+      iconClass = 'trail-icon completed';
+      badgeClass = 'trail-badge done';
+      badgeText = info.avg + '% ✓';
+      barColor = '#16a34a';
+    } else if(!info.unlocked){
+      iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+      stepClass = 'trail-step locked';
+      iconClass = 'trail-icon locked';
+      badgeClass = 'trail-badge locked-badge';
+      badgeText = 'Bloqueado';
+      barColor = '#ccc';
+    } else if(isActive){
+      iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+      stepClass = 'trail-step active-step';
+      iconClass = 'trail-icon active-step';
+      badgeClass = 'trail-badge next';
+      badgeText = sessCount > 0 ? info.avg + '% média' : 'Iniciar';
+      barColor = '#1e40af';
+    } else {
+      iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#854d0e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+      stepClass = 'trail-step';
+      iconClass = 'trail-icon active-step';
+      badgeClass = 'trail-badge inprogress';
+      badgeText = info.avg + '% média';
+      barColor = '#f59e0b';
+    }
+
+    const scoreOk = info.avg >= TRAIL_MIN_SCORE && info.sessions.length >= TRAIL_MIN_SESSIONS;
+    const saleOk = info.hasSale;
+    const onclick = (!info.unlocked) ? '' : `onclick="startTrailStage('${stage}')"`;
+
+    const criteriaHtml = info.unlocked ? `
+      <div class="trail-criteria">
+        <div class="trail-criterion">
+          <div class="trail-criterion-dot ${scoreOk?'done':'pending'}">${scoreOk?'✓':'·'}</div>
+          <span style="color:${scoreOk?'#15803d':'#888'}">Média ≥ 70% no treino ${scoreOk ? '('+info.avg+'% ✓)' : '('+info.avg+'% atual — mín. '+TRAIL_MIN_SESSIONS+' sessões)'}</span>
+        </div>
+        <div class="trail-criterion">
+          <div class="trail-criterion-dot ${saleOk?'done':'pending'}">${saleOk?'✓':'·'}</div>
+          <span style="color:${saleOk?'#15803d':'#888'}">${saleOk ? 'Venda registrada ✓' : 'Registrar uma venda real nesta etapa'}</span>
+        </div>
+
+      </div>` : '';
+
+    const connector = i < TRAIL_STAGES.length-1 ? `<div class="trail-connector"></div>` : '';
+
+    container.innerHTML += `
+      <div>
+        <div class="${stepClass}" ${onclick}>
+          <div class="${iconClass}">${iconSvg}</div>
+          <div class="trail-info">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div class="trail-name">${i+1}. ${stage}</div>
+              <span class="${badgeClass}">${badgeText}</span>
+            </div>
+            ${info.unlocked ? `
+            <div class="trail-score-row">
+              <div class="trail-bar-wrap"><div class="trail-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+              <div class="trail-score-label" style="color:${barColor}">${info.avg}%</div>
+            </div>` : ''}
+            ${criteriaHtml}
+          </div>
+        </div>
+        ${connector}
+      </div>`;
+  });
+}
+
+async function triggerDealClosed(){
+  const stageName = STAGES[curStage].name;
+  
+  // Check if already registered
+  const {data: existing} = await sb.from('sales').select('id').eq('user_id',userId).eq('stage',stageName).maybeSingle();
+  if(existing) return;
+
+  // Register sale automatically
+  await sb.from('sales').insert({user_id:userId,user_name:userName,stage:stageName});
+
+  // Show celebration in chat
+  const chat = document.getElementById('chat');
+  const cel = document.createElement('div');
+  cel.style.cssText = 'background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #16a34a;border-radius:14px;padding:20px;text-align:center;margin-top:8px';
+  cel.innerHTML = `
+    <div style="font-size:28px;margin-bottom:8px">🏆</div>
+    <div style="font-size:16px;font-weight:700;color:#15803d;margin-bottom:4px">Negócio fechado!</div>
+    <div style="font-size:12px;color:#166534;margin-bottom:12px">Você aplicou o framework corretamente e converteu o cliente. Venda registrada automaticamente na sua Trilha.</div>
+    <button onclick="toggleTrail()" style="padding:8px 20px;border-radius:8px;border:none;background:#15803d;color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">Ver progresso na Trilha</button>
+  `;
+  chat.appendChild(cel);
+  chat.scrollTop = chat.scrollHeight;
+
+  // Disable input — session complete
+  document.getElementById('inp').disabled = true;
+  document.getElementById('btn-main').textContent = 'Nova simulação';
+  document.getElementById('btn-main').disabled = false;
+  document.getElementById('btn-main').onclick = () => {
+    document.getElementById('inp').disabled = false;
+    document.getElementById('btn-main').onclick = onMainBtn;
+    reset();
+    startSession();
+  };
+}
+
+async function registerSale(stageName){
+  const {error} = await sb.from('sales').insert({user_id:userId,user_name:userName,stage:stageName});
+  if(error){alert('Erro ao registrar: '+error.message);return;}
+  await loadTrail();
+}
+
+async function registerSaleFromChat(stageName, btn){
+  btn.disabled = true;
+  btn.textContent = 'Registrando...';
+  const {error} = await sb.from('sales').insert({user_id:userId,user_name:userName,stage:stageName});
+  if(error){
+    btn.disabled=false;
+    btn.textContent='Sim, registrar venda feita';
+    alert('Erro: '+error.message);
+    return;
+  }
+  btn.parentElement.innerHTML = '<div style="font-weight:500;color:#15803d;font-size:13px">✓ Venda registrada! Volte à Trilha para ver seu progresso.</div>';
+}
+
+function startTrailStage(stageName){
+  const idx = TRAIL_STAGES.indexOf(stageName);
+  if(idx === -1) return;
+  
+  // Close trail panel, go to that stage
+  trailOpen = false;
+  document.getElementById('trail-panel').style.display='none';
+  document.getElementById('main-area').style.display='flex';
+  document.getElementById('sb-trail').classList.remove('active');
+  
+  // Set trail mode flag
+  window._trailMode = true;
+  
+  selStage(idx);
+  
+  // Show trail banner
+  const banner = document.getElementById('trail-banner');
+  banner.style.display = 'flex';
+  document.getElementById('trail-banner-text').textContent = 'Modo Trilha — ' + stageName + ' · Você está conversando com um cliente real. Feche o negócio!';
+  
+  // Change button text and disable to prevent double call
+  const btnMain = document.getElementById('btn-main');
+  btnMain.textContent = 'Nova simulação';
+  btnMain.disabled = true;
+  
+  await startSession();
+  btnMain.disabled = false;
+}
+
+// ANALYTICS
+let analyticsChart = null;
+let currentRange = 'day';
+let analyticsOpen = false;
+
+function toggleAnalytics(){
+  analyticsOpen = !analyticsOpen;
+  const panel = document.getElementById('analytics-panel');
+  panel.style.display = analyticsOpen ? 'flex' : 'none';
+  document.getElementById('sb-analytics').classList.toggle('active', analyticsOpen);
+  if(analyticsOpen) loadAnalytics();
+}
+
+function setRange(range){
+  currentRange = range;
+  document.querySelectorAll('.af-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  loadAnalytics();
+}
+
+function getDateFilter(range){
+  const now = new Date();
+  if(range === 'day'){
+    const today = now.toISOString().split('T')[0];
+    return today;
+  }
+  if(range === 'week'){
+    const d = new Date(now);
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().split('T')[0];
+  }
+  if(range === 'month'){
+    const d = new Date(now);
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  }
+  return null;
+}
+
+async function loadAnalytics(){
+  document.getElementById('analytics-title').textContent = 'Minha evolução — ' + userName;
+  
+  let query = sb.from('sessions').select('*').eq('user_id', userId).order('created_at', {ascending: true});
+  
+  const dateFilter = getDateFilter(currentRange);
+  if(dateFilter) query = query.gte('session_date', dateFilter);
+  
+  const {data} = await query;
+  
+  if(!data || !data.length){
+    document.getElementById('analytics-sub').textContent = 'Nenhuma sessão no período selecionado.';
+    document.getElementById('analytics-cards').innerHTML = '';
+    if(analyticsChart){ analyticsChart.destroy(); analyticsChart = null; }
+    return;
+  }
+
+  document.getElementById('analytics-sub').textContent = data.length + ' sessões no período';
+
+  // Group by date and stage
+  const stages = ['Prospecção','Qualificação','Proposta','Objeções','Fechamento'];
+  const colors = ['#378ADD','#7F77DD','#D85A30','#EAB308','#639922'];
+  
+  // Get all unique dates
+  const dateSet = new Set();
+  data.forEach(s => {
+    const d = (s.session_date || s.created_at.split('T')[0]);
+    dateSet.add(d);
+  });
+  const dates = Array.from(dateSet).sort();
+
+  // Build datasets per stage
+  const datasets = stages.map((stage, i) => {
+    const stageSessions = data.filter(s => s.stage === stage);
+    const pointsMap = {};
+    stageSessions.forEach(s => {
+      const d = (s.session_date || s.created_at.split('T')[0]);
+      if(!pointsMap[d]) pointsMap[d] = [];
+      pointsMap[d].push(s.score_geral || 0);
+    });
+    const points = dates.map(d => {
+      if(!pointsMap[d]) return null;
+      return Math.round(pointsMap[d].reduce((a,b) => a+b, 0) / pointsMap[d].length);
+    });
+    const hasData = points.some(p => p !== null);
+    if(!hasData) return null;
+    return {
+      label: stage,
+      data: points,
+      borderColor: colors[i],
+      backgroundColor: colors[i] + '22',
+      borderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      tension: 0.3,
+      spanGaps: true
+    };
+  }).filter(Boolean);
+
+  // Format dates for display
+  const labels = dates.map(d => {
+    const [y,m,day] = d.split('-');
+    return day+'/'+m;
+  });
+
+  // Render chart
+  const ctx = document.getElementById('evolution-chart').getContext('2d');
+  if(analyticsChart) analyticsChart.destroy();
+  analyticsChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 16 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.dataset.label + ': ' + (ctx.raw !== null ? ctx.raw + '%' : '—')
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          ticks: { callback: v => v + '%', font: { size: 11 } },
+          grid: { color: '#f0f0f0' }
+        },
+        x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+
+  // Cards por módulo
+  const cardsHtml = stages.map((stage, i) => {
+    const stageSessions = data.filter(s => s.stage === stage);
+    if(!stageSessions.length) return '';
+    const avg = Math.round(stageSessions.reduce((a,b) => a+(b.score_geral||0), 0) / stageSessions.length);
+    const first = stageSessions[0].score_geral || 0;
+    const last = stageSessions[stageSessions.length-1].score_geral || 0;
+    const delta = last - first;
+    const deltaStr = delta > 0 ? '+'+delta : delta;
+    const deltaColor = delta > 0 ? '#16a34a' : delta < 0 ? '#dc2626' : '#888';
+    return `<div style="background:#f9f9f7;border:1px solid #e5e5e3;border-radius:10px;padding:12px;">
+      <div style="font-size:10px;color:#aaa;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">${stage}</div>
+      <div style="font-size:22px;font-weight:600;color:#1a1a1a">${avg}%</div>
+      <div style="font-size:11px;margin-top:4px;color:${deltaColor}">${deltaStr > 0 ? '↑' : delta < 0 ? '↓' : '—'} ${Math.abs(delta)}pts evolução</div>
+      <div style="font-size:10px;color:#aaa;margin-top:2px">${stageSessions.length} sessão(ões)</div>
+    </div>`;
+  }).join('');
+  document.getElementById('analytics-cards').innerHTML = cardsHtml;
+}
+</script>
+</body>
+</html>
